@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.23)
 
 if(NOT DEFINED ENV{VCPKG_ROOT})
 	message(FATAL_ERROR "VCPKG_ROOT environment variable is not set")
@@ -13,9 +13,9 @@ if(APPLE)
 	enable_language(OBJC)
 endif()
 
-find_package(SDL2 REQUIRED)
+find_package(SDL3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(GLEW REQUIRED)
+find_package(GLEW CONFIG REQUIRED)
 
 add_executable(wipeout)
 add_subdirectory(external)
@@ -26,18 +26,7 @@ else()
 	target_compile_options(wipeout PRIVATE -Wall -Wextra)
 endif()
 
-if(TARGET SDL2::SDL2main)
-	message(STATUS "Using SDL2::SDL2main")
-	target_link_libraries(wipeout PRIVATE SDL2::SDL2main)
-endif()
-
-if(TARGET SDL2::SDL2)
-	message(STATUS "Using SDL2::SDL2")
-	target_link_libraries(wipeout PRIVATE SDL2::SDL2)
-else()
-	message(STATUS "Using SDL2::SDL2-static")
-	target_link_libraries(wipeout PRIVATE SDL2::SDL2-static)
-endif()
+target_link_libraries(wipeout PRIVATE SDL3::SDL3)
 
 if(TARGET OpenGL::EGL)
 	target_link_libraries(wipeout PUBLIC OpenGL::EGL)
