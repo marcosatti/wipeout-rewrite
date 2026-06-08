@@ -2,7 +2,15 @@
   "name": "wipeout-rewrite",
   "version-string": "1.0.0",
   "dependencies": [
-    "sdl3",
-    "glew"
+    {
+      "name": "sdl3"
+    },
+    {
+      "name": "glew"
+    },
+    {
+      "name": "angle",
+      "platform": "windows"
+    }
   ]
 }
