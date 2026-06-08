@@ -254,14 +254,21 @@ void platform_set_fullscreen(bool fullscreen)
 
 void platform_audio_callback(void* userdata, SDL_AudioStream* stream, int additional_amount, int total_amount) 
 {
-	static float buffer[4096];
+	static float* buffer = NULL;
+
+	if (!buffer)
+		buffer = calloc(additional_amount / sizeof(float), sizeof(float));
+	else
+		buffer = realloc(buffer, additional_amount);
 
 	if (audio_callback)
-		audio_callback(buffer, sizeof(buffer) / sizeof(float));
+		audio_callback(buffer, additional_amount / sizeof(float));
 	else
-		memset(buffer, 0, sizeof(buffer));
+		memset(buffer, 0, additional_amount);
 
-	SDL_PutAudioStreamData(stream, buffer, sizeof(buffer));
+	SDL_PutAudioStreamData(stream, buffer, additional_amount);
+
+	// TODO: free memory
 }
 
 void platform_set_audio_mix_cb(void (*cb)(float *buffer, uint32_t len)) 
@@ -346,9 +353,9 @@ int main(int argc, char *argv[]) {
 
 	SDL_AudioSpec desired_spec = 
 	{
+		.format = SDL_AUDIO_F32,
 		.channels = 2,
-		.freq = 44100,
-		.format = SDL_AUDIO_F32
+		.freq = 44100
 	};
 
 	audio_device = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired_spec, platform_audio_callback, NULL);
