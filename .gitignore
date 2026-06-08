@@ -1,11 +1,10 @@
-/wipeout.sublime-project
-/wipeout.sublime-workspace
+# IDE files
+/.vscode/
+/settings/
 
-/wipeout/
+# Build files
 /build/
+/temp/
 
-/wipegame
-/wipegame.exe
-/save.dat
-.DS_Store
-gamecontrollerdb.txt
+# Game files
+/wipeout/

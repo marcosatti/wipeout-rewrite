@@ -1,233 +1,139 @@
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
-project(wipeout-rewrite)
+cmake_minimum_required(VERSION 3.13)
 
-if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
-	message(FATAL_ERROR "In-tree builds are not allowed.")
+if(NOT DEFINED ENV{VCPKG_ROOT})
+	message(FATAL_ERROR "VCPKG_ROOT environment variable is not set")
 endif()
 
-include(GNUInstallDirs)
-include(CMakeDependentOption)
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
 
-if("${CMAKE_SYSTEM_NAME}" STREQUAL "Emscripten")
-	set(EMSCRIPTEN true)
+project(wipeout)
+enable_language(C CXX)
+
+if(APPLE)
+	enable_language(OBJC)
 endif()
 
-set(platform_options "SDL2" "SOKOL" "NULL")
-set(PLATFORM "SDL2" CACHE STRING "Graphics platform to handle input/output")
-set_property(CACHE PLATFORM PROPERTY STRINGS "${platform_options}")
-if(NOT PLATFORM IN_LIST platform_options)
-	message(FATAL_ERROR "PLATFORM must be one of ${platform_options}")
+find_package(SDL2 REQUIRED)
+find_package(OpenGL REQUIRED)
+find_package(GLEW REQUIRED)
+
+add_executable(wipeout)
+add_subdirectory(external)
+
+if(MSVC)
+	target_compile_options(wipeout PRIVATE /W4)
+else()
+	target_compile_options(wipeout PRIVATE -Wall -Wextra)
 endif()
 
-set(renderer_options "GL" "GLES2" "SOFTWARE" "NULL")
-set(RENDERER "GL" CACHE STRING "Graphics rendering backend")
-set_property(CACHE RENDERER PROPERTY STRINGS "${renderer_options}")
-if(NOT RENDERER IN_LIST renderer_options)
-	message(FATAL_ERROR "RENDERER must be one of ${renderer_options}")
-endif()
-if("${RENDERER}" MATCHES "GL(ES2)?")
-	set(using_gl true)
-endif()
-if("${CMAKE_SYSTEM_NAME}" MATCHES "(Linux|FreeBSD)")
-	set(has_glvnd true)
+if(TARGET SDL2::SDL2main)
+	message(STATUS "Using SDL2::SDL2main")
+	target_link_libraries(wipeout PRIVATE SDL2::SDL2main)
 endif()
 
-cmake_dependent_option(USE_GLVND "Link against modern GLVND ABIs" ON "using_gl;has_glvnd" OFF)
-cmake_dependent_option(MINIMAL_BUNDLE "Do not include music/movies for web builds" OFF "EMSCRIPTEN" OFF)
-option(PATH_ASSETS "Path to where the game assets should be located.")
-option(PATH_USERDATA "Path to where user data (e.g. game saves) should be located.")
-option(DEV_BUILD "Set asset/userdata paths to the source directory for testing" OFF)
-if (DEV_BUILD)
-	set(PATH_ASSETS "${CMAKE_SOURCE_DIR}/")
-	set(PATH_USERDATA "${CMAKE_SOURCE_DIR}/")
+if(TARGET SDL2::SDL2)
+	message(STATUS "Using SDL2::SDL2")
+	target_link_libraries(wipeout PRIVATE SDL2::SDL2)
+else()
+	message(STATUS "Using SDL2::SDL2-static")
+	target_link_libraries(wipeout PRIVATE SDL2::SDL2-static)
 endif()
 
-find_package(OpenGL)
-find_package(GLEW)
-find_package(SDL2)
+if(TARGET OpenGL::EGL)
+	target_link_libraries(wipeout PUBLIC OpenGL::EGL)
+elseif(TARGET OpenGL::OpenGL)
+	target_link_libraries(wipeout PUBLIC OpenGL::OpenGL)
+else()
+	target_link_libraries(wipeout PUBLIC OpenGL::GL)
+endif()
 
-set(common_src
-	src/wipeout/camera.c
-	src/wipeout/camera.h
-	src/wipeout/droid.c
-	src/wipeout/droid.h
-	src/wipeout/game.c
-	src/wipeout/game.h
-	src/wipeout/hud.c
-	src/wipeout/hud.h
-	src/wipeout/image.c
-	src/wipeout/image.h
-	src/wipeout/ingame_menus.c
-	src/wipeout/ingame_menus.h
-	src/wipeout/intro.c
-	src/wipeout/intro.h
-	src/wipeout/main_menu.c
-	src/wipeout/main_menu.h
-	src/wipeout/menu.c
-	src/wipeout/menu.h
-	src/wipeout/object.c
-	src/wipeout/object.h
-	src/wipeout/particle.c
-	src/wipeout/particle.h
-	src/wipeout/race.c
-	src/wipeout/race.h
-	src/wipeout/scene.c
-	src/wipeout/scene.h
-	src/wipeout/sfx.c
-	src/wipeout/sfx.h
-	src/wipeout/ship.c
-	src/wipeout/ship.h
-	src/wipeout/ship_ai.c
-	src/wipeout/ship_ai.h
-	src/wipeout/ship_player.c
-	src/wipeout/ship_player.h
-	src/wipeout/title.c
-	src/wipeout/title.h
-	src/wipeout/track.c
-	src/wipeout/track.h
-	src/wipeout/ui.c
-	src/wipeout/ui.h
-	src/wipeout/weapon.c
-	src/wipeout/weapon.h
-	src/input.c
-	src/input.h
-	src/mem.c
-	src/mem.h
-	src/platform.h
-	src/render.h
-	src/system.c
-	src/system.h
-	src/types.c
-	src/types.h
-	src/utils.c
-	src/utils.h
+target_link_libraries(wipeout PRIVATE GLEW::GLEW)
 
-	packaging/windows/wipeout.exe.manifest
-	packaging/windows/wipeout.rc
-)
+if(WIN32)
+	target_compile_definitions(wipeout 
+		PRIVATE
+			"NOMINMAX"
+			"_USE_MATH_DEFINES"
+			"_CRT_SECURE_NO_WARNINGS"
+	)
+elseif(APPLE)
+	target_compile_definitions(wipeout 
+		PRIVATE
+			"_THREAD_SAFE"
+			"GL_SILENCE_DEPRECATION"
+	)
 
-add_executable(wipeout WIN32 ${common_src})
-set_property(TARGET wipeout PROPERTY C_STANDARD 11)
-target_include_directories(wipeout PRIVATE src)
-target_include_directories(wipeout SYSTEM PRIVATE src/libs)
-target_compile_options(wipeout PRIVATE
-	$<$<CXX_COMPILER_ID:MSVC>:/W4>
-	$<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra>
-)
-target_compile_definitions(wipeout PRIVATE
-	$<$<BOOL:${PATH_ASSETS}>:-DPATH_ASSETS=${PATH_ASSETS}>
-	$<$<BOOL:${PATH_USERDATA}>:-DPATH_USERDATA=${PATH_USERDATA}>
+	target_link_libraries(wipeout PUBLIC "-framework Foundation")
+endif()
+
+target_link_libraries(wipeout PRIVATE external)
+
+target_sources(wipeout
+	PRIVATE
+		FILE_SET headers TYPE HEADERS BASE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/source/include FILES
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/camera.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/droid.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/game.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/hud.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/image.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/ingame_menus.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/intro.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/main_menu.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/menu.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/object.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/particle.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/race.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/scene.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/sfx.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/ship.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/ship_ai.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/ship_player.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/title.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/track.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/ui.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/weapon.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/input.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/mem.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/platform.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/render.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/system.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/types.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/utils.h
+	PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/camera.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/droid.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/game.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/hud.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/image.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/ingame_menus.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/intro.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/main_menu.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/menu.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/object.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/particle.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/race.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/scene.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/sfx.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/ship.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/ship_ai.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/ship_player.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/title.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/track.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/ui.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/weapon.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/input.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/mem.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/platform.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/render.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/system.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/types.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/utils.c
 )
 
 if(WIN32)
-	target_compile_definitions(wipeout PRIVATE
-		"NOMINMAX"
-		"_USE_MATH_DEFINES"
-		"_CRT_SECURE_NO_WARNINGS"
+	target_sources(wipeout
+		PRIVATE
+			packaging/windows/wipeout.exe.manifest
+			packaging/windows/wipeout.rc
 	)
-elseif(APPLE)
-	target_compile_definitions(wipeout PRIVATE
-		"_THREAD_SAFE"
-		"GL_SILENCE_DEPRECATION"
-	)
-	target_link_libraries(wipeout PUBLIC "-framework Foundation")
-	set_source_files_properties(src/platform_sokol.c PROPERTIES COMPILE_FLAGS "-x objective-c")
-	if("${PLATFORM}" STREQUAL SOKOL)
-		target_link_libraries(wipeout PUBLIC
-			"-framework Cocoa"
-			"-framework QuartzCore"
-			"-framework AudioToolbox"
-		)
-	endif()
-elseif(EMSCRIPTEN)
-	# Emscripten's CMake modules don't define targets like the standard
-	# ones do, so we define them ourselves here.
-	add_library(GLEW::GLEW INTERFACE IMPORTED)
-	add_library(OpenGL::GL INTERFACE IMPORTED)
-	if (NOT TARGET SDL2::Main)
-		add_library(SDL2::Main INTERFACE IMPORTED)
-	endif()
-	set_target_properties(OpenGL::GL PROPERTIES
-		IMPORTED_LIBNAME "GL"
-	)
-	set_target_properties(GLEW::GLEW PROPERTIES
-		IMPORTED_LIBNAME "GLEW"
-	)
-	set_target_properties(SDL2::Main PROPERTIES
-		IMPORTED_LIBNAME "SDL2"
-		INTERFACE_COMPILE_OPTIONS "SHELL:-s USE_SDL=2"
-		INTERFACE_LINK_LIBRARIES  "SHELL:-s USE_SDL=2"
-	)
-
-	target_link_options(wipeout PRIVATE
-		"SHELL:-s ALLOW_MEMORY_GROWTH=1"
-		"SHELL:-s ENVIRONMENT=web"
-		"SHELL:-s FORCE_FILESYSTEM"
-		"SHELL:--preload-file ${CMAKE_SOURCE_DIR}/wipeout/@/wipeout"
-	)
-	if(MINIMAL_BUNDLE)
-		target_link_options(wipeout PRIVATE
-			"SHELL:--exclude-file ${CMAKE_SOURCE_DIR}/wipeout/music"
-			"SHELL:--exclude-file ${CMAKE_SOURCE_DIR}/intro.mpeg"
-		)
-	endif()
-
-	configure_file("${CMAKE_SOURCE_DIR}/src/wasm-index.html" "game.html" COPYONLY)
-elseif(UNIX)
-	target_link_libraries(wipeout PUBLIC m)
-	if ("${PLATFORM}" STREQUAL "SOKOL" AND "${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")
-		find_package(Threads REQUIRED)
-		find_package(X11 REQUIRED)
-		find_package(ALSA REQUIRED)
-		target_link_libraries(wipeout PUBLIC
-			X11::X11
-			X11::Xcursor
-			Threads::Threads
-			X11::Xi
-			dl
-			ALSA::ALSA
-		)
-	endif()
 endif()
-
-if(using_gl)
-	target_compile_definitions(wipeout PRIVATE "RENDERER_GL")
-	target_sources(wipeout PRIVATE src/render_gl.c)
-
-	target_include_directories(wipeout PUBLIC ${OPENGL_INCLUDE_DIR})
-	if ("${RENDERER}" STREQUAL "GLES2")
-		target_compile_definitions(wipeout PRIVATE "USE_GLES2")
-		if (TARGET OpenGL::GLES2)
-			target_link_libraries(wipeout PUBLIC OpenGL::GLES2)
-		endif()
-	endif()
-
-	if(USE_GLVND AND TARGET OpenGL::OpenGL)
-		target_link_libraries(wipeout PUBLIC OpenGL::OpenGL)
-	else()
-		target_link_libraries(wipeout PUBLIC OpenGL::GL)
-	endif()
-
-	if(NOT APPLE)
-		target_include_directories(wipeout PRIVATE ${GLEW_INCLUDE_DIRS})
-		target_link_libraries(wipeout PRIVATE GLEW::GLEW)
-	endif()
-elseif("${RENDERER}" STREQUAL "SOFTWARE")
-	target_compile_definitions(wipeout PRIVATE "RENDERER_SOFTWARE")
-	target_sources(wipeout PRIVATE src/render_software.c)
-elseif("${RENDERER}" STREQUAL "NULL")
-	target_compile_definitions(wipeout PRIVATE "RENDERER_NULL")
-	target_sources(wipeout PRIVATE src/render_null.c)
-endif()
-
-if("${PLATFORM}" STREQUAL SDL2)
-	target_sources(wipeout PRIVATE src/platform_sdl.c)
-	target_link_libraries(wipeout PUBLIC SDL2::Main)
-elseif("${PLATFORM}" STREQUAL SOKOL)
-	target_sources(wipeout PRIVATE src/platform_sokol.c)
-elseif("${PLATFORM}" STREQUAL NULL)
-	target_sources(wipeout PRIVATE src/platform_null.c)
-endif()
-
-install(TARGETS wipeout)
