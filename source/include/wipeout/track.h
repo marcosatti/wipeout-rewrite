@@ -1,10 +1,13 @@
 #ifndef TRACK_H
 #define TRACK_H
 
-
 #include "types.h"
 #include "wipeout/object.h"
 #include "wipeout/image.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define TRACK_VERSION 8
 
@@ -92,5 +95,9 @@ struct camera_t;
 void track_draw(struct camera_t *camera);
 
 void track_cycle_pickups(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

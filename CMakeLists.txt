@@ -15,7 +15,7 @@ endif()
 
 find_package(SDL3 CONFIG REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(GLEW CONFIG REQUIRED)
+find_package(unofficial-angle REQUIRED CONFIG)
 
 add_executable(wipeout)
 add_subdirectory(external)
@@ -36,7 +36,7 @@ else()
 	target_link_libraries(wipeout PUBLIC OpenGL::GL)
 endif()
 
-target_link_libraries(wipeout PRIVATE GLEW::GLEW)
+target_link_libraries(wipeout PRIVATE unofficial::angle::libGLESv2)
 
 if(WIN32)
 	target_compile_definitions(wipeout 
@@ -83,7 +83,10 @@ target_sources(wipeout
 			${CMAKE_CURRENT_SOURCE_DIR}/source/include/wipeout/weapon.h
 			${CMAKE_CURRENT_SOURCE_DIR}/source/include/input.h
 			${CMAKE_CURRENT_SOURCE_DIR}/source/include/mem.h
-			${CMAKE_CURRENT_SOURCE_DIR}/source/include/platform.h
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/main.hpp
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/audio.hpp
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/state.hpp
+			${CMAKE_CURRENT_SOURCE_DIR}/source/include/video.hpp
 			${CMAKE_CURRENT_SOURCE_DIR}/source/include/render.h
 			${CMAKE_CURRENT_SOURCE_DIR}/source/include/system.h
 			${CMAKE_CURRENT_SOURCE_DIR}/source/include/types.h
@@ -91,30 +94,32 @@ target_sources(wipeout
 	PRIVATE
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/camera.c
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/droid.c
-		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/game.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/game.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/hud.c
-		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/image.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/image.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/ingame_menus.c
-		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/intro.c
-		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/main_menu.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/intro.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/main_menu.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/menu.c
-		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/object.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/object.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/particle.c
-		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/race.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/race.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/scene.c
-		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/sfx.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/sfx.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/ship.c
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/ship_ai.c
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/ship_player.c
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/title.c
-		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/track.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/track.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/ui.c
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/wipeout/weapon.c
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/input.c
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/mem.c
-		${CMAKE_CURRENT_SOURCE_DIR}/source/src/platform.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/main.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/audio.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/video.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/render.c
-		${CMAKE_CURRENT_SOURCE_DIR}/source/src/system.c
+		${CMAKE_CURRENT_SOURCE_DIR}/source/src/system.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/types.c
 		${CMAKE_CURRENT_SOURCE_DIR}/source/src/utils.c
 )
@@ -126,3 +131,7 @@ if(WIN32)
 			packaging/windows/wipeout.rc
 	)
 endif()
+
+target_compile_options(wipeout PRIVATE "-fpermissive;-w")
+target_compile_features(wipeout PRIVATE c_std_23)
+target_compile_features(wipeout PRIVATE cxx_std_23)

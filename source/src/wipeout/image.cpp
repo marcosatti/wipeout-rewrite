@@ -1,7 +1,7 @@
+#include "main.hpp"
 #include "types.h"
 #include "mem.h"
 #include "utils.h"
-#include "platform.h"
 
 #include "wipeout/object.h"
 #include "wipeout/track.h"
@@ -227,8 +227,9 @@ void lzss_decompress(uint8_t *in_data, uint8_t *out_data) {
 
 cmp_t *image_load_compressed(char *name) {
 	printf("load cmp %s\n", name);
-	uint32_t compressed_size;
-	uint8_t *compressed_bytes = platform_load_asset(name, &compressed_size);
+	auto compressed_bytes_vector = platform_load_asset(name);
+	auto compressed_bytes = (uint8_t*)compressed_bytes_vector.data();
+	uint32_t compressed_size = compressed_bytes_vector.size();
 
 	uint32_t p = 0;
 	int32_t decompressed_size = 0;
@@ -240,7 +241,7 @@ cmp_t *image_load_compressed(char *name) {
 	}
 
 	uint32_t struct_size = sizeof(cmp_t) + sizeof(uint8_t *) * image_count;
-	cmp_t *cmp = mem_temp_alloc(struct_size + decompressed_size);
+	cmp_t *cmp = (cmp_t*)mem_temp_alloc(struct_size + decompressed_size);
 	cmp->len = image_count;
 
 	uint8_t *decompressed_bytes = ((uint8_t *)cmp) + struct_size;
@@ -254,38 +255,37 @@ cmp_t *image_load_compressed(char *name) {
 	}
 
 	lzss_decompress(compressed_bytes + p, decompressed_bytes);
-	mem_temp_free(compressed_bytes);
 
 	return cmp;
 }
 
 uint16_t image_get_texture(char *name) {
 	printf("load: %s\n", name);
-	uint32_t size;
-	uint8_t *bytes = platform_load_asset(name, &size);
+	auto bytes_vector = platform_load_asset(name);
+	auto bytes = (uint8_t*)bytes_vector.data();
+	uint32_t size = bytes_vector.size();
 	image_t *image = image_load_from_bytes(bytes, false);
 	uint32_t texture_index = render_texture_create(image->width, image->height, image->pixels);
 	mem_temp_free(image);
-	mem_temp_free(bytes);
 
 	return texture_index;
 }
 
 uint16_t image_get_texture_semi_trans(char *name) {
 	printf("load: %s\n", name);
-	uint32_t size;
-	uint8_t *bytes = platform_load_asset(name, &size);
+	auto bytes_vector = platform_load_asset(name);
+	auto bytes = (uint8_t*)bytes_vector.data();
+	uint32_t size = bytes_vector.size();
 	image_t *image = image_load_from_bytes(bytes, true);
 	uint32_t texture_index = render_texture_create(image->width, image->height, image->pixels);
 	mem_temp_free(image);
-	mem_temp_free(bytes);
 
 	return texture_index;
 }
 
 texture_list_t image_get_compressed_textures(char *name) {
 	cmp_t *cmp = image_load_compressed(name);
-	texture_list_t list = {.start = render_textures_len(), .len = cmp->len};
+	texture_list_t list = {.start = render_textures_len(), .len = (uint16_t)cmp->len};
 
 	for (int i = 0; i < cmp->len; i++) {
 		int32_t width, height;

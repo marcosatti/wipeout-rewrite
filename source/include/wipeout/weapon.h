@@ -1,6 +1,10 @@
 #ifndef WEAPON_H
 #define WEAPON_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define WEAPONS_MAX 64
 
 #define WEAPON_MINE_DURATION (450 * (1.0/30.0))
@@ -47,5 +51,9 @@ void weapons_fire_delayed(ship_t *ship, int weapon_type);
 void weapons_update(void);
 void weapons_draw(void);
 int weapon_get_random_type(int type_class);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -8,6 +8,10 @@
 #include "wipeout/camera.h"
 #include "wipeout/track.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define NUM_AI_OPPONENTS 7
 #define NUM_PILOTS_PER_TEAM 2
 #define NUM_NON_BONUS_CIRCUTS 6
@@ -276,5 +280,9 @@ void game_init(void);
 void game_set_scene(game_scene_t scene);
 void game_reset_championship(void);
 void game_update(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

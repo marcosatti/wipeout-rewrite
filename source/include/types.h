@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <math.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if !defined(M_PI)
 	#define M_PI 3.14159265358979323846
 #endif
@@ -250,5 +254,9 @@ void mat4_set_yaw_pitch_roll(mat4_t *m, vec3_t rot);
 void mat4_set_roll_pitch_yaw(mat4_t *mat, vec3_t rot);
 void mat4_translate(mat4_t *mat, vec3_t translation);
 void mat4_mul(mat4_t *res, mat4_t *a, mat4_t *b);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

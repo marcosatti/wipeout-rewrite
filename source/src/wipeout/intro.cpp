@@ -1,9 +1,11 @@
+#include <iterator>
+#include <vector>
+#include "main.hpp"
 #include "system.h"
 #include "input.h"
 #include "utils.h"
 #include "types.h"
 #include "mem.h"
-#include "platform.h"
 
 #include "wipeout/intro.h"
 #include "wipeout/ui.h"
@@ -28,6 +30,7 @@ static plm_t *plm;
 static rgba_t *frame_buffer;
 static int16_t texture;
 static float *audio_buffer;
+static std::vector<char> g_intro_data;
 static int audio_buffer_read_pos;
 static int audio_buffer_write_pos;
 
@@ -37,13 +40,18 @@ static void audio_mix(float *samples, uint32_t len);
 static void intro_end(void);
 
 void intro_init(void) {
-	FILE *file = platform_open_asset("wipeout/intro.mpeg", "rb");
-	if (!file) {
+	auto stream = platform_open_asset("wipeout/intro.mpeg");
+	if (!stream) {
 		intro_end();
 		return;
 	}
 
-	plm = plm_create_with_file(file, true);
+	auto iterator = std::istreambuf_iterator{stream};
+	g_intro_data = std::vector<char>(iterator, {});
+	auto size = g_intro_data.size();
+	auto buffer = (uint8_t*)g_intro_data.data();
+
+	plm = plm_create_with_memory(buffer, size, false);
 	if (!plm) {
 		intro_end();
 		return;
@@ -57,14 +65,14 @@ void intro_init(void) {
 
 	int w = plm_get_width(plm);
 	int h = plm_get_height(plm);
-	frame_buffer = mem_bump(w * h * sizeof(rgba_t));
+	frame_buffer = (rgba_t*)mem_bump(w * h * sizeof(rgba_t));
 	for (int i = 0; i < w * h; i++) {
 		frame_buffer[i] = rgba(0, 0, 0, 255);
 	}
 	texture = render_texture_create(w, h, frame_buffer);
 
 	sfx_set_external_mix_cb(audio_mix);
-	audio_buffer = mem_bump(INTRO_AUDIO_BUFFER_LEN * sizeof(float) * 2);
+	audio_buffer = (float*)mem_bump(INTRO_AUDIO_BUFFER_LEN * sizeof(float) * 2);
 	audio_buffer_read_pos = 0;
 	audio_buffer_write_pos = 0;
 }

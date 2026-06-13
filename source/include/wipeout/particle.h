@@ -3,6 +3,10 @@
 
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PARTICLES_MAX 1024
 
 #define PARTICLE_TYPE_NONE -1
@@ -28,5 +32,9 @@ void particles_init(void);
 void particles_spawn(vec3_t position, uint16_t type, vec3_t velocity, int size);
 void particles_draw(void);
 void particles_update(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

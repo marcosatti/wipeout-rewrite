@@ -1,8 +1,8 @@
+#include "main.hpp"
 #include "mem.h"
 #include "utils.h"
 #include "render.h"
 #include "system.h"
-#include "platform.h"
 
 #include "wipeout/object.h"
 #include "wipeout/track.h"
@@ -85,25 +85,23 @@ void track_load(const char *base_path) {
 }
 
 ttf_t *track_load_tile_format(char *ttf_name) {
-	uint32_t ttf_size;
-	uint8_t *ttf_bytes = platform_load_asset(ttf_name, &ttf_size);
+	auto ttf_bytes = platform_load_asset(ttf_name);
 
 	uint32_t p = 0;
-	uint32_t num_tiles = ttf_size / 42;
+	uint32_t num_tiles = ttf_bytes.size() / 42;
 
-	ttf_t *ttf = mem_temp_alloc(sizeof(ttf_t) + sizeof(ttf_tile_t) * num_tiles);
+	ttf_t *ttf = (ttf_t*)mem_temp_alloc(sizeof(ttf_t) + sizeof(ttf_tile_t) * num_tiles);
 	ttf->len = num_tiles;
 
 	for (int t = 0; t < num_tiles; t++) {
 		for (int i = 0; i < 16; i++) {
-			ttf->tiles[t].near[i] = get_i16(ttf_bytes, &p);
+			ttf->tiles[t].near[i] = get_i16((uint8_t*)ttf_bytes.data(), &p);
 		}
 		for (int i = 0; i < 4; i++) {
-			ttf->tiles[t].med[i] = get_i16(ttf_bytes, &p);
+			ttf->tiles[t].med[i] = get_i16((uint8_t*)ttf_bytes.data(), &p);
 		}
-		ttf->tiles[t].far = get_i16(ttf_bytes, &p);
+		ttf->tiles[t].far = get_i16((uint8_t*)ttf_bytes.data(), &p);
 	}
-	mem_temp_free(ttf_bytes);
 
 	return ttf;
 }
@@ -121,21 +119,19 @@ bool track_collect_pickups(track_face_t *face) {
 }
 
 vec3_t *track_load_vertices(char *file_name) {
-	uint32_t size;
-	uint8_t *bytes = platform_load_asset(file_name, &size);
+	auto bytes = platform_load_asset(file_name);
 
-	g.track.vertex_count = size / 16; // VECTOR_SIZE
-	vec3_t *vertices = mem_temp_alloc(sizeof(vec3_t) * g.track.vertex_count);
+	g.track.vertex_count = bytes.size() / 16; // VECTOR_SIZE
+	vec3_t *vertices = (vec3_t*)mem_temp_alloc(sizeof(vec3_t) * g.track.vertex_count);
 	
 	uint32_t p = 0;
 	for (int i = 0; i < g.track.vertex_count; i++) {
-		vertices[i].x = get_i32(bytes, &p);
-		vertices[i].y = get_i32(bytes, &p);
-		vertices[i].z = get_i32(bytes, &p);
+		vertices[i].x = get_i32((uint8_t*)bytes.data(), &p);
+		vertices[i].y = get_i32((uint8_t*)bytes.data(), &p);
+		vertices[i].z = get_i32((uint8_t*)bytes.data(), &p);
 		p += 4; // padding
 	}
 
-	mem_temp_free(bytes);
 	return vertices;
 }
 
@@ -145,11 +141,10 @@ static const vec2_t track_uv[2][4] = {
 };
 
 void track_load_faces(char *file_name, vec3_t *vertices) {
-	uint32_t size;
-	uint8_t *bytes = platform_load_asset(file_name, &size);
+	auto bytes = platform_load_asset(file_name);
 
-	g.track.face_count = size / 20; // TRACK_FACE_DATA_SIZE
-	g.track.faces = mem_bump(sizeof(track_face_t) * g.track.face_count);
+	g.track.face_count = bytes.size() / 20; // TRACK_FACE_DATA_SIZE
+	g.track.faces = (track_face_t*)mem_bump(sizeof(track_face_t) * g.track.face_count);
 
 	uint32_t p = 0;
 	track_face_t *tf = g.track.faces;
@@ -157,18 +152,18 @@ void track_load_faces(char *file_name, vec3_t *vertices) {
 	
 	for (int i = 0; i < g.track.face_count; i++) {
 
-		vec3_t v0 = vertices[get_i16(bytes, &p)];
-		vec3_t v1 = vertices[get_i16(bytes, &p)];
-		vec3_t v2 = vertices[get_i16(bytes, &p)];
-		vec3_t v3 = vertices[get_i16(bytes, &p)];
-		tf->normal.x = (float)get_i16(bytes, &p) / 4096.0;
-		tf->normal.y = (float)get_i16(bytes, &p) / 4096.0;
-		tf->normal.z = (float)get_i16(bytes, &p) / 4096.0;
+		vec3_t v0 = vertices[get_i16((uint8_t*)bytes.data(), &p)];
+		vec3_t v1 = vertices[get_i16((uint8_t*)bytes.data(), &p)];
+		vec3_t v2 = vertices[get_i16((uint8_t*)bytes.data(), &p)];
+		vec3_t v3 = vertices[get_i16((uint8_t*)bytes.data(), &p)];
+		tf->normal.x = (float)get_i16((uint8_t*)bytes.data(), &p) / 4096.0;
+		tf->normal.y = (float)get_i16((uint8_t*)bytes.data(), &p) / 4096.0;
+		tf->normal.z = (float)get_i16((uint8_t*)bytes.data(), &p) / 4096.0;
 
-		tf->texture = get_i8(bytes, &p);
-		tf->flags = get_i8(bytes, &p);
+		tf->texture = get_i8((uint8_t*)bytes.data(), &p);
+		tf->flags = get_i8((uint8_t*)bytes.data(), &p);
 
-		rgba_t color = rgba_from_u32(get_u32(bytes, &p));
+		rgba_t color = rgba_from_u32(get_u32((uint8_t*)bytes.data(), &p));
 		const vec2_t *uv = track_uv[flags_is(tf->flags, FACE_FLIP_TEXTURE) ? 1 : 0];
 
 		tf->tris[0] = (tris_t){
@@ -188,22 +183,19 @@ void track_load_faces(char *file_name, vec3_t *vertices) {
 
 		tf++;
 	}
-
-	mem_temp_free(bytes);
 }
 
 
 void track_load_sections(char *file_name) {
-	uint32_t size;
-	uint8_t *bytes = platform_load_asset(file_name, &size);
+	auto bytes = platform_load_asset(file_name);
 
-	g.track.section_count = size / 156; // SECTION_DATA_SIZE
-	g.track.sections = mem_bump(sizeof(section_t) * g.track.section_count);
+	g.track.section_count = bytes.size() / 156; // SECTION_DATA_SIZE
+	g.track.sections = (section_t*)mem_bump(sizeof(section_t) * g.track.section_count);
 
 	uint32_t p = 0;
 	section_t *ts = g.track.sections;
 	for (int i = 0; i < g.track.section_count; i++) {
-		int32_t junction_index = get_i32(bytes, &p);
+		int32_t junction_index = get_i32((uint8_t*)bytes.data(), &p);
 		if (junction_index != -1) {
 			ts->junction = g.track.sections + junction_index;
 		}
@@ -211,14 +203,14 @@ void track_load_sections(char *file_name) {
 			ts->junction = NULL;
 		}
 
-		ts->prev = g.track.sections + get_i32(bytes, &p);
-		ts->next = g.track.sections + get_i32(bytes, &p);
+		ts->prev = g.track.sections + get_i32((uint8_t*)bytes.data(), &p);
+		ts->next = g.track.sections + get_i32((uint8_t*)bytes.data(), &p);
 
-		ts->center.x = get_i32(bytes, &p);
-		ts->center.y = get_i32(bytes, &p);
-		ts->center.z = get_i32(bytes, &p);
+		ts->center.x = get_i32((uint8_t*)bytes.data(), &p);
+		ts->center.y = get_i32((uint8_t*)bytes.data(), &p);
+		ts->center.z = get_i32((uint8_t*)bytes.data(), &p);
 
-		int16_t version = get_i16(bytes, &p);
+		int16_t version = get_i16((uint8_t*)bytes.data(), &p);
 		error_if(version != TRACK_VERSION, "Convert track with track10: section: %d Track: %d\n", version, TRACK_VERSION);
 		p += 2; // padding
 
@@ -229,18 +221,16 @@ void track_load_sections(char *file_name) {
 		p += 4 * 2; // high list
 		p += 4 * 2; // med list
 
-		ts->face_start = get_i16(bytes, &p);
-		ts->face_count = get_i16(bytes, &p);
+		ts->face_start = get_i16((uint8_t*)bytes.data(), &p);
+		ts->face_count = get_i16((uint8_t*)bytes.data(), &p);
 
 		p += 2 * 2; // global/local radius
 
-		ts->flags = get_i16(bytes, &p);
-		ts->num = get_i16(bytes, &p);
+		ts->flags = get_i16((uint8_t*)bytes.data(), &p);
+		ts->num = get_i16((uint8_t*)bytes.data(), &p);
 		p += 2; // padding
 		ts++;
 	}
-
-	mem_temp_free(bytes);
 }
 
 
@@ -259,7 +249,8 @@ void track_draw_section(section_t *section) {
 }
 
 void track_draw(camera_t *camera) {	
-	render_set_model_mat(&mat4_identity());
+	auto temp1 = mat4_identity();
+	render_set_model_mat(&temp1);
 
 	// Calculate the camera forward vector, so we can cull everything that's
 	// behind. Ideally we'd want to do a full frustum culling here. FIXME.
@@ -292,12 +283,10 @@ void track_cycle_pickups(void) {
 		}
 		else if (g.track.pickups[i].cooldown_timer <= 0) {
 			flags_add(g.track.pickups[i].face->flags, FACE_PICKUP_ACTIVE);
-			track_face_set_color(g.track.pickups[i].face, rgba(
-				sin( pickup_cycle_time + i) * 127 + 128,
-				cos( pickup_cycle_time + i) * 127 + 128,
-				sin(-pickup_cycle_time - i) * 127 + 128,
-				255
-			));
+			auto r_value = (uint8_t)(sin( pickup_cycle_time + i) * 127 + 128);
+			auto g_value = (uint8_t)(cos( pickup_cycle_time + i) * 127 + 128);
+			auto b_value = (uint8_t)(sin(-pickup_cycle_time - i) * 127 + 128);
+			track_face_set_color(g.track.pickups[i].face, rgba(r_value, g_value, b_value, 255));
 		}
 		else{
 			g.track.pickups[i].cooldown_timer -= system_tick();

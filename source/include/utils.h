@@ -4,6 +4,10 @@
 #include <string.h>
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef WIN32
 	#undef min
 	#undef max
@@ -141,5 +145,9 @@ static inline uint32_t get_u32_le(uint8_t *bytes, uint32_t *p) {
 #define get_i16_le(BYTES, P) ((int16_t)get_u16_le(BYTES, P))
 #define get_i32(BYTES, P) ((int32_t)get_u32(BYTES, P))
 #define get_i32_le(BYTES, P) ((int32_t)get_u32_le(BYTES, P))
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

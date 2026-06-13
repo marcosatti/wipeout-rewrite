@@ -3,6 +3,10 @@
 
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	SFX_CRUNCH,
 	SFX_EBOLT,
@@ -81,5 +85,9 @@ void sfx_music_next(void);
 void sfx_music_play(uint32_t index);
 void sfx_music_mode(sfx_music_mode_t);
 void sfx_music_pause(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -3,6 +3,10 @@
 
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	INPUT_INVALID = 0,
 	INPUT_KEY_A = 4,
@@ -187,5 +191,9 @@ const char *input_button_to_name(button_t button);
 #define INPUT_DEADZONE_CAPTURE 0.5
 #define INPUT_ACTION_NONE 255
 #define INPUT_BUTTON_NONE 0
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

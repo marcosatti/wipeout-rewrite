@@ -3,6 +3,10 @@
 
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define MEM_TEMP_OBJECTS_MAX 8
 #define MEM_HUNK_BYTES (16 * 1024 * 1024)
 
@@ -13,5 +17,9 @@ void mem_reset(void *p);
 void *mem_temp_alloc(uint32_t size);
 void mem_temp_free(void *p);
 void mem_temp_check(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

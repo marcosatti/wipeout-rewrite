@@ -6,6 +6,10 @@
 #include "wipeout/ship.h"
 #include "wipeout/sfx.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DROID_UPDATE_TIME_INITIAL (800 * (1.0/30.0))
 #define DROID_UPDATE_TIME_INTRO_1 (770 * (1.0/30.0))
 #define DROID_UPDATE_TIME_INTRO_2 (710 * (1.0/30.0))
@@ -35,5 +39,9 @@ void droid_update(droid_t *droid, ship_t *ship);
 void droid_update_intro(droid_t *droid, ship_t *ship);
 void droid_update_idle(droid_t *droid, ship_t *ship);
 void droid_update_rescue(droid_t *droid, ship_t *ship);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

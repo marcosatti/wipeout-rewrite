@@ -6,9 +6,6 @@
       "name": "sdl3"
     },
     {
-      "name": "glew"
-    },
-    {
       "name": "angle",
       "platform": "windows"
     }

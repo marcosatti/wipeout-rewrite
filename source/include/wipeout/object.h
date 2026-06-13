@@ -6,6 +6,10 @@
 #include "utils.h"
 #include "wipeout/image.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Primitive Structure Stub ( Structure varies with primitive type )
 
 typedef struct Primitive {
@@ -380,5 +384,9 @@ typedef union Prm {
 
 Object *objects_load(char *name, texture_list_t tl);
 void object_draw(Object *object, mat4_t *mat);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

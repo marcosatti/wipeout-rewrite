@@ -3,6 +3,10 @@
 
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SYSTEM_WINDOW_NAME "wipEout"
 #define SYSTEM_WINDOW_WIDTH 1280
 #define SYSTEM_WINDOW_HEIGHT 720
@@ -19,5 +23,9 @@ double system_cycle_time(void);
 void system_reset_cycle_time(void);
 double system_time_scale_get(void);
 void system_time_scale_set(double ts);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

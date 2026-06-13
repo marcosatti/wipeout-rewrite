@@ -5,6 +5,10 @@
 #include "wipeout/track.h"
 #include "wipeout/sfx.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SHIP_IN_TOW			 	(1<< 0)
 #define SHIP_VIEW_REMOTE	 	(1<< 1)
 #define SHIP_VIEW_INTERNAL		(1<< 2)
@@ -166,5 +170,8 @@ vec3_t ship_nose(ship_t *self);
 vec3_t ship_wing_left(ship_t *self);
 vec3_t ship_wing_right(ship_t *self);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

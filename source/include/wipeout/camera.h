@@ -4,6 +4,10 @@
 #include "types.h"
 #include "wipeout/droid.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define CAMERA_SHAKE_LONG (20.0f * (1.0f / 30.0f))
 #define CAMERA_SHAKE_SHORT (2.0f * (1.0f / 30.0f))
 
@@ -35,5 +39,9 @@ void camera_update_attract_random(camera_t *, ship_t *camShip, droid_t *);
 void camera_update_rescue(camera_t *, ship_t *camShip, droid_t *);
 void camera_set_shake(camera_t *, float duration);
 void camera_update_shake(camera_t *);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -1,6 +1,6 @@
+#include "main.hpp"
 #include "mem.h"
 #include "input.h"
-#include "platform.h"
 #include "system.h"
 #include "utils.h"
 #include "render.h"

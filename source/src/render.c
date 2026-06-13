@@ -1,25 +1,6 @@
 
-// macOS
-#if defined(__APPLE__) && defined(__MACH__)
-	#include <OpenGL/gl.h>
-	#include <OpenGL/glext.h>
-	
-	#define glGenVertexArrays glGenVertexArraysAPPLE
-	#define glBindVertexArray glBindVertexArrayAPPLE
-	#define glDeleteVertexArrays glDeleteVertexArraysAPPLE
-
-// Linux
-#elif defined(__unix__)
-	#include <GL/glew.h>
-	
-// Windows
-#elif defined(WIN32)
-	#include <windows.h>
-
-	#define GL3_PROTOTYPES 1
-	#include <GL/glew.h>
-	#include <GL/gl.h>
-#endif
+#include <GLES3/gl31.h>
+#include <GLES3/gl32.h>
 
 
 
@@ -387,23 +368,23 @@ static render_stats_t end_stats = {0};
 static void render_flush(void);
 
 
-// static void gl_message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam) {
-// 	puts(message);
-// }
+static void gl_message_callback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam) {
+	puts(message);
+}
 
 void render_init(vec2i_t screen_size) {	
-	#if defined(__APPLE__) && defined(__MACH__)
-		// OSX
-		// (nothing to do here)
-	#else
-		// Windows, Linux
-		glewExperimental = GL_TRUE;
-		glewInit();
-	#endif
+	// #if defined(__APPLE__) && defined(__MACH__)
+	// 	// OSX
+	// 	// (nothing to do here)
+	// #else
+	// 	// Windows, Linux
+	// 	glewExperimental = GL_TRUE;
+	// 	glewInit();
+	// #endif
 
-	// glEnable(GL_DEBUG_OUTPUT);
-	// glDebugMessageCallback(gl_message_callback, NULL);
-	// glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(gl_message_callback, NULL);
+	glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
 
 
 	// Atlas Texture
@@ -415,9 +396,9 @@ void render_init(vec2i_t screen_size) {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	float anisotropy = 0;
-	glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisotropy);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
+	// float anisotropy = 0;
+	// glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &anisotropy);
+	// glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
 
 	uint32_t tw = ATLAS_SIZE * ATLAS_GRID;
 	uint32_t th = ATLAS_SIZE * ATLAS_GRID;
@@ -1006,11 +987,11 @@ void render_textures_reset(uint16_t len) {
 	}
 }
 
-void render_textures_dump(const char *path) {
-	int width = ATLAS_SIZE * ATLAS_GRID;
-	int height = ATLAS_SIZE * ATLAS_GRID;
-	rgba_t *pixels = malloc(sizeof(rgba_t) * width * height);
-	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-	stbi_write_png(path, width, height, 4, pixels, 0);
-	free(pixels);
-}
+// void render_textures_dump(const char *path) {
+// 	int width = ATLAS_SIZE * ATLAS_GRID;
+// 	int height = ATLAS_SIZE * ATLAS_GRID;
+// 	rgba_t *pixels = malloc(sizeof(rgba_t) * width * height);
+// 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+// 	stbi_write_png(path, width, height, 4, pixels, 0);
+// 	free(pixels);
+// }

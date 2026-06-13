@@ -1,6 +1,9 @@
+#include <memory>
+#include <iostream>
+#include <fstream>
+#include "main.hpp"
 #include "utils.h"
 #include "mem.h"
-#include "platform.h"
 
 #include "wipeout/sfx.h"
 #include "wipeout/game.h"
@@ -16,7 +19,7 @@ typedef struct {
 
 typedef struct {
 	qoa_desc qoa;
-	FILE *file;
+	std::ifstream file;
 
 	uint32_t track_index;
 	uint32_t first_frame_pos;
@@ -47,31 +50,32 @@ static const int32_t vag_tab[5][2] = {
 static sfx_data_t *sources;
 static uint32_t num_sources;
 static sfx_t *nodes;
-static music_decoder_t *music;
+static std::unique_ptr<music_decoder_t> music;
 static void (*external_mix_cb)(float *, uint32_t len) = NULL;
 
 void sfx_load(void) {
 	// Init decode buffer for music
 	uint32_t channels = 2;
-	music = mem_bump(sizeof(music_decoder_t));
-	music->buffer = mem_bump(QOA_FRAME_SIZE(channels, QOA_SLICES_PER_FRAME));
-	music->sample_data = mem_bump(channels * QOA_FRAME_LEN * sizeof(short) * 2);
+	music = std::make_unique<music_decoder_t>();
+	music->buffer = (uint8_t*)mem_bump(QOA_FRAME_SIZE(channels, QOA_SLICES_PER_FRAME));
+	music->sample_data = (short*)mem_bump(channels * QOA_FRAME_LEN * sizeof(short) * 2);
 	music->qoa.channels = channels;
 	music->mode = SFX_MUSIC_RANDOM;
-	music->file = NULL;
+	music->file = std::ifstream{};
 	music->track_index = -1;
 
 
 	// Load SFX samples
-	nodes = mem_bump(SFX_MAX * sizeof(sfx_t));
+	nodes = (sfx_t*)mem_bump(SFX_MAX * sizeof(sfx_t));
 
 	// 16 byte blocks: 2 byte header, 14 bytes with 2x4bit samples each
-	uint32_t vb_size;
-	uint8_t *vb = platform_load_asset("wipeout/sound/wipeout.vb", &vb_size);
+	auto vb_vector = platform_load_asset("wipeout/sound/wipeout.vb");
+	uint32_t vb_size = vb_vector.size();
+	uint8_t *vb = (uint8_t*)vb_vector.data();
 	uint32_t num_samples = (vb_size / 16) * 28;
 
-	int16_t *sample_buffer = mem_bump(num_samples * sizeof(int16_t));
-	sources = mem_mark();
+	int16_t *sample_buffer = (int16_t*)mem_bump(num_samples * sizeof(int16_t));
+	sources = (sfx_data_t*)mem_mark();
 	num_sources = 0;
 
 	uint32_t sample_index = 0;
@@ -114,7 +118,6 @@ void sfx_load(void) {
 		}
 	}
 
-	mem_temp_free(vb);
 	platform_set_audio_mix_cb(sfx_stero_mix);
 }
 
@@ -231,7 +234,9 @@ uint32_t sfx_music_decode_frame(void) {
 	if (!music->file) {
 		return 0;
 	}
-	music->buffer_len = fread(music->buffer, 1, qoa_max_frame_size(&music->qoa), music->file);
+
+	music->file.read(music->buffer, qoa_max_frame_size(&music->qoa));
+	music->buffer_len = music->file.gcount();
 
 	uint32_t frame_len;
 	qoa_decode_frame(music->buffer, music->buffer_len, &music->qoa, music->sample_data, &frame_len);
@@ -241,45 +246,44 @@ uint32_t sfx_music_decode_frame(void) {
 }
 
 void sfx_music_rewind(void) {
-	fseek(music->file, music->first_frame_pos, SEEK_SET);
+	music->file.seekg(music->first_frame_pos);
 	music->sample_data_len = 0;
 	music->sample_data_pos = 0;
 }
 
 void sfx_music_open(char *path) {
-	if (music->file) {
-		fclose(music->file);
-		music->file = NULL;
+	if (music->file.is_open()) {
+		music->file.close();
 	}
 	
-	FILE *file = platform_open_asset(path, "rb");
-	if (!file) {
+	music->file = platform_open_asset(path);
+	if (!music->file.is_open()) {
 		return;
 	}
 
 	uint8_t header[QOA_MIN_FILESIZE];
-	int read = fread(header, QOA_MIN_FILESIZE, 1, file);
+	music->file.read((char*)header, QOA_MIN_FILESIZE);
+	int read = music->file.gcount();
 	if (!read) {
-		fclose(file);
+		music->file.close();
 		return;
 	}
 
 	qoa_desc qoa;
 	uint32_t first_frame_pos = qoa_decode_header(header, QOA_MIN_FILESIZE, &qoa);
 	if (!first_frame_pos) {
-		fclose(file);
+		music->file.close();
 		return;
 	}
 
-	fseek(file, first_frame_pos, SEEK_SET);
+	music->file.seekg(first_frame_pos, std::ios_base::beg);
 
 	if (qoa.channels != music->qoa.channels) {
-		fclose(file);
+		music->file.close();
 		return;
 	}
 	music->qoa = qoa;
 	music->first_frame_pos = first_frame_pos;
-	music->file = file;
 	music->sample_data_len = 0;
 	music->sample_data_pos = 0;
 }

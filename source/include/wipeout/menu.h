@@ -4,6 +4,10 @@
 #include "types.h"
 #include "wipeout/ui.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define MENU_PAGES_MAX 8
 #define MENU_ENTRIES_MAX 16
 
@@ -61,5 +65,9 @@ void menu_pop(menu_t *menu);
 void menu_page_add_button(menu_page_t *page, int data, char *text, void(*select_func)(menu_t *, int));
 void menu_page_add_toggle(menu_page_t *page, int data, char *text, const char **options, int len, void(*select_func)(menu_t *, int));
 void menu_update(menu_t *menu);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

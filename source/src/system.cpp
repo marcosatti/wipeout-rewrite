@@ -1,7 +1,7 @@
+#include "main.hpp"
 #include "system.h"
 #include "input.h"
 #include "render.h"
-#include "platform.h"
 #include "mem.h"
 #include "utils.h"
 

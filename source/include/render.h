@@ -3,6 +3,10 @@
 
 #include "types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
 	RENDER_BLEND_NORMAL,
 	RENDER_BLEND_LIGHTER
@@ -66,6 +70,10 @@ vec2i_t render_texture_size(uint16_t texture_index);
 void render_texture_replace_pixels(int16_t texture_index, rgba_t *pixels);
 uint16_t render_textures_len(void);
 void render_textures_reset(uint16_t len);
-void render_textures_dump(const char *path);
+// void render_textures_dump(const char *path);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

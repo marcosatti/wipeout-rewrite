@@ -1,8 +1,8 @@
+#include "main.hpp"
 #include "types.h"
 #include "mem.h"
 #include "render.h"
 #include "utils.h"
-#include "platform.h"
 
 #include "wipeout/object.h"
 #include "wipeout/track.h"
@@ -16,19 +16,17 @@
 #include "wipeout/object.h"
 
 Object *objects_load(char *name, texture_list_t tl) {
-	uint32_t length = 0;
-	uint8_t *bytes = platform_load_asset(name, &length);
-	if (!bytes) {
-		die("Failed to load file %s\n", name);
-	}
+	auto bytesVector = platform_load_asset(name);
+	auto length = bytesVector.size();
+	auto bytes = (uint8_t*)bytesVector.data();
 	printf("load: %s\n", name);
 
-	Object *objectList = mem_mark();
+	Object *objectList = (Object*)mem_mark();
 	Object *prevObject = NULL;
 	uint32_t p = 0;
 
 	while (p < length) {
-		Object *object = mem_bump(sizeof(Object));
+		Object *object = (Object*)mem_bump(sizeof(Object));
 		if (prevObject) {
 			prevObject->next = object;
 		}
@@ -69,7 +67,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 		p += 4; // skeleton next
 
 		object->radius = 0;
-		object->vertices = mem_bump(object->vertices_len * sizeof(vec3_t));
+		object->vertices = (vec3_t*)mem_bump(object->vertices_len * sizeof(vec3_t));
 		for (int i = 0; i < object->vertices_len; i++) {
 			object->vertices[i].x = get_i16(bytes, &p);
 			object->vertices[i].y = get_i16(bytes, &p);
@@ -89,7 +87,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 
 
 
-		object->normals = mem_bump(object->normals_len * sizeof(vec3_t));
+		object->normals = (vec3_t*)mem_bump(object->normals_len * sizeof(vec3_t));
 		for (int i = 0; i < object->normals_len; i++) {
 			object->normals[i].x = get_i16(bytes, &p);
 			object->normals[i].y = get_i16(bytes, &p);
@@ -97,7 +95,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 			p += 2; // padding
 		}
 
-		object->primitives = mem_mark();
+		object->primitives = (Primitive*)mem_mark();
 		for (int i = 0; i < object->primitives_len; i++) {
 			Prm prm;
 			int16_t prm_type = get_i16(bytes, &p);
@@ -105,7 +103,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 
 			switch (prm_type) {
 			case PRM_TYPE_F3:
-				prm.ptr = mem_bump(sizeof(F3));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(F3));
 				prm.f3->coords[0] = get_i16(bytes, &p);
 				prm.f3->coords[1] = get_i16(bytes, &p);
 				prm.f3->coords[2] = get_i16(bytes, &p);
@@ -114,7 +112,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_F4:
-				prm.ptr = mem_bump(sizeof(F4));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(F4));
 				prm.f4->coords[0] = get_i16(bytes, &p);
 				prm.f4->coords[1] = get_i16(bytes, &p);
 				prm.f4->coords[2] = get_i16(bytes, &p);
@@ -123,7 +121,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_FT3:
-				prm.ptr = mem_bump(sizeof(FT3));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(FT3));
 				prm.ft3->coords[0] = get_i16(bytes, &p);
 				prm.ft3->coords[1] = get_i16(bytes, &p);
 				prm.ft3->coords[2] = get_i16(bytes, &p);
@@ -143,7 +141,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_FT4:
-				prm.ptr = mem_bump(sizeof(FT4));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(FT4));
 				prm.ft4->coords[0] = get_i16(bytes, &p);
 				prm.ft4->coords[1] = get_i16(bytes, &p);
 				prm.ft4->coords[2] = get_i16(bytes, &p);
@@ -165,7 +163,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_G3:
-				prm.ptr = mem_bump(sizeof(G3));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(G3));
 				prm.g3->coords[0] = get_i16(bytes, &p);
 				prm.g3->coords[1] = get_i16(bytes, &p);
 				prm.g3->coords[2] = get_i16(bytes, &p);
@@ -176,7 +174,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_G4:
-				prm.ptr = mem_bump(sizeof(G4));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(G4));
 				prm.g4->coords[0] = get_i16(bytes, &p);
 				prm.g4->coords[1] = get_i16(bytes, &p);
 				prm.g4->coords[2] = get_i16(bytes, &p);
@@ -188,7 +186,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_GT3:
-				prm.ptr = mem_bump(sizeof(GT3));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(GT3));
 				prm.gt3->coords[0] = get_i16(bytes, &p);
 				prm.gt3->coords[1] = get_i16(bytes, &p);
 				prm.gt3->coords[2] = get_i16(bytes, &p);
@@ -209,7 +207,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_GT4:
-				prm.ptr = mem_bump(sizeof(GT4));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(GT4));
 				prm.gt4->coords[0] = get_i16(bytes, &p);
 				prm.gt4->coords[1] = get_i16(bytes, &p);
 				prm.gt4->coords[2] = get_i16(bytes, &p);
@@ -235,7 +233,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 
 
 			case PRM_TYPE_LSF3:
-				prm.ptr = mem_bump(sizeof(LSF3));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(LSF3));
 				prm.lsf3->coords[0] = get_i16(bytes, &p);
 				prm.lsf3->coords[1] = get_i16(bytes, &p);
 				prm.lsf3->coords[2] = get_i16(bytes, &p);
@@ -244,7 +242,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_LSF4:
-				prm.ptr = mem_bump(sizeof(LSF4));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(LSF4));
 				prm.lsf4->coords[0] = get_i16(bytes, &p);
 				prm.lsf4->coords[1] = get_i16(bytes, &p);
 				prm.lsf4->coords[2] = get_i16(bytes, &p);
@@ -255,7 +253,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_LSFT3:
-				prm.ptr = mem_bump(sizeof(LSFT3));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(LSFT3));
 				prm.lsft3->coords[0] = get_i16(bytes, &p);
 				prm.lsft3->coords[1] = get_i16(bytes, &p);
 				prm.lsft3->coords[2] = get_i16(bytes, &p);
@@ -274,7 +272,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_LSFT4:
-				prm.ptr = mem_bump(sizeof(LSFT4));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(LSFT4));
 				prm.lsft4->coords[0] = get_i16(bytes, &p);
 				prm.lsft4->coords[1] = get_i16(bytes, &p);
 				prm.lsft4->coords[2] = get_i16(bytes, &p);
@@ -296,7 +294,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_LSG3:
-				prm.ptr = mem_bump(sizeof(LSG3));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(LSG3));
 				prm.lsg3->coords[0] = get_i16(bytes, &p);
 				prm.lsg3->coords[1] = get_i16(bytes, &p);
 				prm.lsg3->coords[2] = get_i16(bytes, &p);
@@ -309,7 +307,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_LSG4:
-				prm.ptr = mem_bump(sizeof(LSG4));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(LSG4));
 				prm.lsg4->coords[0] = get_i16(bytes, &p);
 				prm.lsg4->coords[1] = get_i16(bytes, &p);
 				prm.lsg4->coords[2] = get_i16(bytes, &p);
@@ -325,7 +323,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_LSGT3:
-				prm.ptr = mem_bump(sizeof(LSGT3));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(LSGT3));
 				prm.lsgt3->coords[0] = get_i16(bytes, &p);
 				prm.lsgt3->coords[1] = get_i16(bytes, &p);
 				prm.lsgt3->coords[2] = get_i16(bytes, &p);
@@ -348,7 +346,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_LSGT4:
-				prm.ptr = mem_bump(sizeof(LSGT4));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(LSGT4));
 				prm.lsgt4->coords[0] = get_i16(bytes, &p);
 				prm.lsgt4->coords[1] = get_i16(bytes, &p);
 				prm.lsgt4->coords[2] = get_i16(bytes, &p);
@@ -377,7 +375,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 
 			case PRM_TYPE_TSPR:
 			case PRM_TYPE_BSPR:
-				prm.ptr = mem_bump(sizeof(SPR));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(SPR));
 				prm.spr->coord = get_i16(bytes, &p);
 				prm.spr->width = get_i16(bytes, &p);
 				prm.spr->height = get_i16(bytes, &p);
@@ -386,7 +384,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_SPLINE:
-				prm.ptr = mem_bump(sizeof(Spline));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(Spline));
 				prm.spline->control1.x = get_i32(bytes, &p);
 				prm.spline->control1.y = get_i32(bytes, &p);
 				prm.spline->control1.z = get_i32(bytes, &p);
@@ -403,7 +401,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_POINT_LIGHT:
-				prm.ptr = mem_bump(sizeof(PointLight));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(PointLight));
 				prm.pointLight->position.x = get_i32(bytes, &p);
 				prm.pointLight->position.y = get_i32(bytes, &p);
 				prm.pointLight->position.z = get_i32(bytes, &p);
@@ -414,7 +412,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_SPOT_LIGHT:
-				prm.ptr = mem_bump(sizeof(SpotLight));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(SpotLight));
 				prm.spotLight->position.x = get_i32(bytes, &p);
 				prm.spotLight->position.y = get_i32(bytes, &p);
 				prm.spotLight->position.z = get_i32(bytes, &p);
@@ -431,7 +429,7 @@ Object *objects_load(char *name, texture_list_t tl) {
 				break;
 
 			case PRM_TYPE_INFINITE_LIGHT:
-				prm.ptr = mem_bump(sizeof(InfiniteLight));
+				prm.ptr = (uint8_t*)mem_bump(sizeof(InfiniteLight));
 				prm.infiniteLight->direction.x = get_i16(bytes, &p);
 				prm.infiniteLight->direction.y = get_i16(bytes, &p);
 				prm.infiniteLight->direction.z = get_i16(bytes, &p);
@@ -449,7 +447,6 @@ Object *objects_load(char *name, texture_list_t tl) {
 		} // each prim
 	} // each object
 
-	mem_temp_free(bytes);
 	return objectList;
 }
 
