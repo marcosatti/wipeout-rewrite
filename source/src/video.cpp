@@ -7,15 +7,10 @@ namespace Video
 
 void initialize(state_t* state)
 {
-	state->window = SDL_CreateWindow(
-		Main::AppName,
-		Main::DefaultWindowWidth, 
-        Main::DefaultWindowHeight,
-		SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_WINDOW_HIGH_PIXEL_DENSITY
-	);
+    char SDL_HINT_OPENGL_ES_DRIVER_value = 1;
 
-    if (!state->window)
-        Main::throw_sdl_error("Failed to create window");
+    if (!SDL_SetHint(SDL_HINT_OPENGL_ES_DRIVER , &SDL_HINT_OPENGL_ES_DRIVER_value))
+        Main::throw_sdl_error("Failed to set SDL hint");
 
     if (!SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES))
         Main::throw_sdl_error("Failed to set OpenGL attribute");
@@ -28,6 +23,16 @@ void initialize(state_t* state)
 
     if (!SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG))
         Main::throw_sdl_error("Failed to set OpenGL attribute");
+
+	state->window = SDL_CreateWindow(
+		Main::AppName,
+		Main::DefaultWindowWidth, 
+        Main::DefaultWindowHeight,
+		SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_WINDOW_HIGH_PIXEL_DENSITY
+	);
+
+    if (!state->window)
+        Main::throw_sdl_error("Failed to create window");
 
     state->gl_context = SDL_GL_CreateContext(state->window);
 

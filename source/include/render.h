@@ -29,7 +29,7 @@ typedef struct {
 	uint32_t num_draw_calls;
 } render_stats_t;
 
-#define RENDER_USE_MIPMAPS 1
+#define RENDER_USE_MIPMAPS 0
 
 #define RENDER_FADEOUT_NEAR 48000.0
 #define RENDER_FADEOUT_FAR 64000.0

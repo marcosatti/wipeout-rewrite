@@ -4,6 +4,8 @@ if(NOT DEFINED ENV{VCPKG_ROOT})
 	message(FATAL_ERROR "VCPKG_ROOT environment variable is not set")
 endif()
 
+set(VCPKG_OVERLAY_TRIPLETS "${CMAKE_SOURCE_DIR}/cmake/vcpkg/triplets")
+set(VCPKG_TARGET_TRIPLET "x64-mingw-dynamic-debug")
 set(CMAKE_TOOLCHAIN_FILE "$ENV{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake")
 
 project(wipeout)

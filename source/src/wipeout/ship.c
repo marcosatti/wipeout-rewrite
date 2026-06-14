@@ -165,7 +165,8 @@ void ships_draw(void) {
 
 
 	// Shadows
-	render_set_model_mat(&mat4_identity());
+	mat4_t identity = mat4_identity();
+	render_set_model_mat(&identity);
 
 	render_set_depth_write(false);
 	render_set_depth_offset(-32.0);

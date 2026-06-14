@@ -1,5 +1,4 @@
 
-#include <GLES3/gl31.h>
 #include <GLES3/gl32.h>
 
 
@@ -18,6 +17,7 @@
 
 #define RENDER_TRIS_BUFFER_CAPACITY 2048
 #define TEXTURES_MAX 1024
+#define USE_GLES2 1
 
 
 #if defined(__EMSCRIPTEN__) || defined(USE_GLES2)
@@ -424,7 +424,8 @@ void render_init(vec2i_t screen_size) {
 	use_program(prg_game);
 
 	render_set_view(vec3(0, 0, 0), vec3(0, 0, 0));
-	render_set_model_mat(&mat4_identity());
+	mat4_t identity = mat4_identity();
+	render_set_model_mat(&identity);
 
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
@@ -648,7 +649,8 @@ void render_set_view(vec3_t pos, vec3_t angles) {
 	mat4_translate(&view_mat, vec3_inv(pos));
 	mat4_set_yaw_pitch_roll(&sprite_mat, vec3(-angles.x, angles.y - M_PI, 0));
 
-	render_set_model_mat(&mat4_identity());
+	mat4_t identity = mat4_identity();
+	render_set_model_mat(&identity);
 
 	render_flush();
 	glUniformMatrix4fv(prg_game->uniform.view, 1, false, view_mat.m);
@@ -662,7 +664,8 @@ void render_set_view_2d(void) {
 	render_set_depth_test(false);
 	render_set_depth_write(false);
 
-	render_set_model_mat(&mat4_identity());
+	mat4_t identity = mat4_identity();
+	render_set_model_mat(&identity);
 	glUniform3f(prg_game->uniform.camera_pos, 0, 0, 0);
 	glUniformMatrix4fv(prg_game->uniform.view, 1, false, mat4_identity().m);
 	glUniformMatrix4fv(prg_game->uniform.projection, 1, false, projection_mat_2d.m);
@@ -944,7 +947,7 @@ uint16_t render_texture_create(uint32_t tw, uint32_t th, rgba_t *pixels) {
 vec2i_t render_texture_size(uint16_t texture_index) {
 	error_if(texture_index >= textures_len, "Invalid texture %d", texture_index);
 	return textures[texture_index].size;
-}
+ }
 
 void render_texture_replace_pixels(int16_t texture_index, rgba_t *pixels) {
 	error_if(texture_index >= textures_len, "Invalid texture %d", texture_index);
